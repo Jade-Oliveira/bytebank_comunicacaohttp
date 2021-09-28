@@ -1,6 +1,8 @@
 import 'package:bytebankapi/http/webclients/transaction_webclient.dart';
 import 'package:bytebankapi/models/contact.dart';
 import 'package:bytebankapi/models/transaction.dart';
+import 'package:bytebankapi/widgets/response_dialog.dart';
+import 'package:bytebankapi/widgets/transaction_auth_dialog.dart';
 import 'package:flutter/material.dart';
 
 class TransactionForm extends StatefulWidget {
@@ -65,15 +67,16 @@ class _TransactionFormState extends State<TransactionForm> {
                           double.tryParse(_valueController.text);
                       final transactionCreated =
                           Transaction(value!, widget.contact);
-                      _webClient
-                          .save(transactionCreated)
-                          .then((transactionReceived) {
-                        //verificação para ver se funcionou
-                        // ignore: unnecessary_null_comparison
-                        if (transactionReceived != null) {
-                          Navigator.pop(context);
-                        }
-                      });
+                      showDialog(
+                          context: context,
+                          //nome diferente para o context do builder para ter certeza que vai executar o contexto correto
+                          builder: (contextDialog) {
+                            return TransactionAuthDialog(
+                              onConfirm: (String password) {
+                                _save(transactionCreated, password, context);
+                              },
+                            );
+                          });
                     },
                   ),
                 ),
@@ -83,5 +86,27 @@ class _TransactionFormState extends State<TransactionForm> {
         ),
       ),
     );
+  }
+
+  void _save(
+    Transaction transactionCreated,
+    String password,
+    BuildContext context,
+  ) async {
+    _webClient.save(transactionCreated, password).then((transactionReceived) {
+      //verificação para ver se funcionou
+      // ignore: unnecessary_null_comparison
+      if (transactionReceived != null) {
+        Navigator.pop(context);
+      }
+      //aqui é feito o tratamento dos erros possíveis
+    }).catchError((e) {
+      showDialog(
+          context: context,
+          builder: (contextDialog) {
+            return FailureDialog(e.message);
+          });
+      //só executa esse código do catchError quando verificar que é uma exception
+    }, test: (e) => e is Exception);
   }
 }

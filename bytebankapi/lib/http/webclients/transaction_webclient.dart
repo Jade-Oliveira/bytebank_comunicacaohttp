@@ -36,19 +36,29 @@ class TransactionWebClient {
         .toList();
   }
 
-  Future<Transaction> save(Transaction transaction) async {
+  Future<Transaction> save(Transaction transaction, String password) async {
     //encode vai deovlver uma String que vai representar o json
     final String transactionJson = jsonEncode(transaction.toJson());
 
     final Response response = await client.post(
       Uri.parse(baseUrl),
       headers: {
+        //esse password faz parte da integração entre formulário e dialog
         'Content-type': 'application/json',
-        'password': '1000',
+        'password': password,
       },
       //convertemos o objeto em json
       body: transactionJson,
     );
+
+    //quando não preenchemos valor de transferência
+    if (response.statusCode == 400) {
+      throw Exception('there was an error submiting transaction');
+    }
+
+    if (response.statusCode == 401) {
+      throw Exception('authentication failed');
+    }
 
     return Transaction.fromJson(jsonDecode(response.body));
   }
