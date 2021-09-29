@@ -95,22 +95,17 @@ class _TransactionFormState extends State<TransactionForm> {
     String password,
     BuildContext context,
   ) async {
-    final Transaction? transaction =
-        await _webClient.save(transactionCreated, password).catchError((e) {
-      showDialog(
-          context: context,
-          builder: (contextDialog) {
-            return FailureDialog(e.message);
-          });
-      //só executa esse código do catchError quando verificar que é uma exception
-    }, test: (e) => e is HttpException).catchError((e) {
-      showDialog(
-          context: context,
-          builder: (contextDialog) {
-            return FailureDialog('timeout submiting the transaction');
-          });
-    }, test: (e) => e is TimeoutException);
+    Transaction? transaction = await _send(
+      transactionCreated,
+      password,
+      context,
+    );
 
+    await _showSuccessfullMessage(transaction!, context);
+  }
+
+  Future<void> _showSuccessfullMessage(
+      Transaction transaction, BuildContext context) async {
     if (transaction != null) {
       await showDialog(
           context: context,
@@ -119,5 +114,29 @@ class _TransactionFormState extends State<TransactionForm> {
           });
       Navigator.pop(context);
     }
+  }
+
+  Future<Transaction?> _send(Transaction transactionCreated, String password,
+      BuildContext context) async {
+    final Transaction? transaction =
+        await _webClient.save(transactionCreated, password).catchError((e) {
+      _showFailureMessage(context, message: e.message);
+      //só executa esse código do catchError quando verificar que é uma exception
+    }, test: (e) => e is HttpException).catchError((e) {
+      _showFailureMessage(context,
+          message: 'timeout submiting the transaction');
+    }, test: (e) => e is TimeoutException).catchError((e) {
+      _showFailureMessage(context);
+    });
+    return transaction;
+  }
+
+  void _showFailureMessage(BuildContext context,
+      {String message = 'Unknown error'}) {
+    showDialog(
+        context: context,
+        builder: (contextDialog) {
+          return FailureDialog(message);
+        });
   }
 }
