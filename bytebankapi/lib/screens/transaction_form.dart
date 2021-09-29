@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bytebankapi/http/webclients/transaction_webclient.dart';
 import 'package:bytebankapi/models/contact.dart';
 import 'package:bytebankapi/models/transaction.dart';
@@ -93,20 +95,29 @@ class _TransactionFormState extends State<TransactionForm> {
     String password,
     BuildContext context,
   ) async {
-    _webClient.save(transactionCreated, password).then((transactionReceived) {
-      //verificação para ver se funcionou
-      // ignore: unnecessary_null_comparison
-      if (transactionReceived != null) {
-        Navigator.pop(context);
-      }
-      //aqui é feito o tratamento dos erros possíveis
-    }).catchError((e) {
+    final Transaction? transaction =
+        await _webClient.save(transactionCreated, password).catchError((e) {
       showDialog(
           context: context,
           builder: (contextDialog) {
             return FailureDialog(e.message);
           });
       //só executa esse código do catchError quando verificar que é uma exception
-    }, test: (e) => e is Exception);
+    }, test: (e) => e is HttpException).catchError((e) {
+      showDialog(
+          context: context,
+          builder: (contextDialog) {
+            return FailureDialog('timeout submiting the transaction');
+          });
+    }, test: (e) => e is TimeoutException);
+
+    if (transaction != null) {
+      await showDialog(
+          context: context,
+          builder: (contextDialog) {
+            return SuccessDialog('succesful transaction');
+          });
+      Navigator.pop(context);
+    }
   }
 }

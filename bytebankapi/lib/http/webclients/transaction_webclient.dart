@@ -14,16 +14,12 @@ class TransactionWebClient {
     //o response recebe um json
     final Response response =
         //ao invés de fazer o get sozinho, ele é utilizado a partir do client
-        await client
-            .get(
-              Uri.parse(baseUrl),
-            )
-            .timeout(
-              Duration(seconds: 5),
-            );
+        await client.get(
+      Uri.parse(baseUrl),
+    );
 
     //map pega cada elemento do decodedJson e transforma numa lista nova
-    //nessa tranformação ele vem com estrutura de iterable e aí o toList converte para lista
+    //nessa tranformação ele vem com estrutura de iterable e o toList converte para lista
 
     //equivalente ao código de baixo
     // final List<Transaction> transactions = [];
@@ -36,7 +32,7 @@ class TransactionWebClient {
         .toList();
   }
 
-  Future<Transaction> save(Transaction transaction, String password) async {
+  Future<Transaction?> save(Transaction transaction, String password) async {
     //encode vai deovlver uma String que vai representar o json
     final String transactionJson = jsonEncode(transaction.toJson());
 
@@ -51,15 +47,22 @@ class TransactionWebClient {
       body: transactionJson,
     );
 
+    if (response.statusCode == 200) {
+      return Transaction.fromJson(jsonDecode(response.body));
+    }
+
     //quando não preenchemos valor de transferência
-    if (response.statusCode == 400) {
-      throw Exception('there was an error submiting transaction');
-    }
-
-    if (response.statusCode == 401) {
-      throw Exception('authentication failed');
-    }
-
-    return Transaction.fromJson(jsonDecode(response.body));
+    throw HttpException(_statusCodeResponses[response.statusCode]!);
   }
+
+  static final Map<int, String> _statusCodeResponses = {
+    400: 'there was an error submiting transaction',
+    401: 'authentication failed'
+  };
+}
+
+class HttpException implements Exception {
+  final String message;
+
+  HttpException(this.message);
 }
