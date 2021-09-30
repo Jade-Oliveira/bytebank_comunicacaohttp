@@ -51,9 +51,14 @@ class _TransactionFormState extends State<TransactionForm> {
               Padding(
                 padding: const EdgeInsets.only(top: 16.0),
                 child: TextField(
+                  onChanged: (_) => setState(() {}),
                   controller: _valueController,
                   style: TextStyle(fontSize: 24.0),
-                  decoration: InputDecoration(labelText: 'Value'),
+                  decoration: InputDecoration(
+                      labelText: 'Value',
+                      errorText: _valueController.text == ''
+                          ? 'Insira um valor'
+                          : null),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                 ),
               ),
@@ -63,23 +68,26 @@ class _TransactionFormState extends State<TransactionForm> {
                   width: double.maxFinite,
                   child: ElevatedButton(
                     child: Text('Transfer'),
-                    onPressed: () {
-                      //pega o valor do textField por meio do _valueController e o contato pelo stateful widget
-                      final double? value =
-                          double.tryParse(_valueController.text);
-                      final transactionCreated =
-                          Transaction(value!, widget.contact);
-                      showDialog(
-                          context: context,
-                          //nome diferente para o context do builder para ter certeza que vai executar o contexto correto
-                          builder: (contextDialog) {
-                            return TransactionAuthDialog(
-                              onConfirm: (String password) {
-                                _save(transactionCreated, password, context);
-                              },
-                            );
-                          });
-                    },
+                    onPressed: _valueController.text != ''
+                        ? () {
+                            //pega o valor do textField por meio do _valueController e o contato pelo stateful widget
+                            final double value =
+                                double.parse(_valueController.text);
+                            final transactionCreated =
+                                Transaction(value, widget.contact);
+                            showDialog(
+                                context: context,
+                                //nome diferente para o context do builder para ter certeza que vai executar o contexto correto
+                                builder: (contextDialog) {
+                                  return TransactionAuthDialog(
+                                    onConfirm: (String password) {
+                                      _save(transactionCreated, password,
+                                          context);
+                                    },
+                                  );
+                                });
+                          }
+                        : null,
                   ),
                 ),
               )
