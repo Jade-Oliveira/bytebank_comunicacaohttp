@@ -36,6 +36,8 @@ class TransactionWebClient {
     //encode vai deovlver uma String que vai representar o json
     final String transactionJson = jsonEncode(transaction.toJson());
 
+    await Future.delayed(Duration(seconds: 2));
+
     final Response response = await client.post(
       Uri.parse(baseUrl),
       headers: {
@@ -52,12 +54,20 @@ class TransactionWebClient {
     }
 
     //quando não preenchemos valor de transferência
-    throw HttpException(_statusCodeResponses[response.statusCode]!);
+    throw HttpException(_getMessage(response.statusCode));
+  }
+
+  String _getMessage(int statusCode) {
+    if (_statusCodeResponses.containsKey(statusCode)) {
+      return _statusCodeResponses[statusCode]!;
+    }
+    return 'Unknown error';
   }
 
   static final Map<int, String> _statusCodeResponses = {
     400: 'there was an error submiting transaction',
-    401: 'authentication failed'
+    401: 'authentication failed',
+    409: 'transaction always exists'
   };
 }
 

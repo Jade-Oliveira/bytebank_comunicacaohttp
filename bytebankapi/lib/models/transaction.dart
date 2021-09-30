@@ -1,22 +1,25 @@
 import 'package:bytebankapi/models/contact.dart';
 
 class Transaction {
+  final String id;
   final double value;
   final Contact contact;
 
   Transaction(
+    this.id,
     this.value,
     this.contact,
   );
 
   //pega o json e converte para transaction(objeto)
   Transaction.fromJson(Map<String, dynamic> json)
-      : value = json['value'],
+      : id = json['id'],
+        value = json['value'],
         contact = Contact.fromJson(json['contact']);
 
   //pega o transaction e converte para json
   Map<String, dynamic> toJson() =>
-      {'value': value, 'contact': contact.toJson()};
+      {'id': id, 'value': value, 'contact': contact.toJson()};
 
   @override
   String toString() {
